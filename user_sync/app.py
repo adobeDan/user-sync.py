@@ -32,8 +32,10 @@ import user_sync.connector.umapi
 import user_sync.helper
 import user_sync.lockfile
 import user_sync.rules
+
 from user_sync.error import AssertionException
 from user_sync.version import __version__ as APP_VERSION
+from helper import output_path
 
 LOG_STRING_FORMAT = '%(asctime)s %(process)d %(levelname)s %(name)s - %(message)s'
 LOG_DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
@@ -323,7 +325,7 @@ def log_parameters(args):
     :return: None
     """
     logger.info('------- Invocation parameters -------')
-    logger.info('[[%s]]' % (' '.join(sys.argv)))
+    logger.info('%s' % (output_path(' '.join(sys.argv))))
     logger.debug('-------- Internal parameters --------')
     for parameter_name, parameter_value in args.__dict__.iteritems():
         logger.debug('  %s: %s', parameter_name, parameter_value)

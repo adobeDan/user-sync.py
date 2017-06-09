@@ -24,6 +24,13 @@ import os
 
 import user_sync.error
 
+def output_path(path):
+    '''
+    formats the path for display output. The formatting is used by the test framework.
+    :param path: str
+    :return: str
+    '''
+    return "[[%s]]" % (path)
 
 def open_file(name, mode, buffering=-1):
     """
@@ -76,7 +83,7 @@ def iter_csv_rows(file_path, delimiter=None, recognized_column_names=None, logge
             unrecognized_column_names = [column_name for column_name in reader.fieldnames
                                          if column_name not in recognized_column_names]
             if len(unrecognized_column_names) > 0 and logger is not None:
-                logger.warn("In file '%s': unrecognized column names: %s", file_path, unrecognized_column_names)
+                logger.warn("In file '%s': unrecognized column names: %s", output_path(file_path), unrecognized_column_names)
 
         for row in reader:
             yield row

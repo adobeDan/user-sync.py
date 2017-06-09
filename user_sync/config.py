@@ -30,7 +30,9 @@ import yaml
 
 import user_sync.identity_type
 import user_sync.rules
+
 from user_sync.error import AssertionException
+from helper import output_path
 
 DEFAULT_MAIN_CONFIG_FILENAME = 'user-sync-config.yml'
 
@@ -69,7 +71,7 @@ class ConfigLoader(object):
         ConfigFileLoader.config_encoding = config_encoding
         main_config_content = ConfigFileLoader.load_root_config(main_config_filename)
         self.logger = logger = logging.getLogger('config')
-        logger.info("Using main config file: [[%s]]", main_config_filename)
+        logger.info("Using main config file: %s", output_path(main_config_filename))
         self.main_config = DictConfig("<%s>" % main_config_filename, main_config_content)
 
     def set_options(self, caller_options):
@@ -700,7 +702,7 @@ class ConfigFileLoader:
             # it's a pathname to a configuration file to read
             cls.filepath = os.path.abspath(filename)
             if not os.path.isfile(cls.filepath):
-                raise AssertionException('No such configuration file: [[%s]]' % (cls.filepath,))
+                raise AssertionException('No such configuration file: %s' % (output_path(cls.filepath)))
             cls.filename = os.path.split(cls.filepath)[1]
             cls.dirpath = os.path.dirname(cls.filepath)
             try:
@@ -711,13 +713,13 @@ class ConfigFileLoader:
                 # if a file operation error occurred while loading the
                 # configuration file, swallow up the exception and re-raise it
                 # as an configuration loader exception.
-                raise AssertionException("Error reading configuration file [[%s]]: %s" % (cls.filepath, e))
+                raise AssertionException("Error reading configuration file %s: %s" % (output_path(cls.filepath), e))
             except UnicodeDecodeError as e:
                 # as above, but in case of encoding errors
-                raise AssertionException("Encoding error in configuration file [[%s]]: %s" % (cls.filepath, e))
+                raise AssertionException("Encoding error in configuration file %s: %s" % (output_path(cls.filepath), e))
             except yaml.error.MarkedYAMLError as e:
                 # as above, but in case of parse errors
-                raise AssertionException("Error parsing configuration file [[%s]]: %s" % (cls.filepath, e))
+                raise AssertionException("Error parsing configuration file %s: %s" % (output_path(cls.filepath), e))
 
         # process the content of the dict
         for path_key, options in path_keys.iteritems():
@@ -804,16 +806,16 @@ class ConfigFileLoader:
         returns an absolute path that is resolved relative to the file being loaded
         """
         if not isinstance(val, types.StringTypes):
-            raise AssertionException("Expected pathname for setting %s in config file [[%s]]" %
-                                     (cls.key_path, cls.filename))
+            raise AssertionException("Expected pathname for setting %s in config file %s" %
+                                     (cls.key_path, output_path(cls.filename)))
         if val.startswith('$(') and val.endswith(')'):
             # this presumes
             return "$([" + cls.dirpath + "]" + val[2:-1] + ")"
         if cls.dirpath and not os.path.isabs(val):
             val = os.path.abspath(os.path.join(cls.dirpath, val))
         if must_exist and not os.path.isfile(val):
-            raise AssertionException('In setting %s in config file %s: No such file [[%s]]' %
-                                     (cls.key_path, cls.filename, val))
+            raise AssertionException('In setting %s in config file %s: No such file %s' %
+                                     (cls.key_path, cls.filename, output_path(val)))
         return val
 
 
