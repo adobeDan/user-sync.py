@@ -24,7 +24,7 @@ import logging
 import jwt
 import umapi_client.auth
 
-import helper
+import user_sync.connector.helper
 import user_sync.config
 import user_sync.helper
 import user_sync.identity_type
@@ -49,8 +49,8 @@ class UmapiConnector(object):
         builder = user_sync.config.OptionsBuilder(caller_config)
         builder.set_string_value('logger_name', self.name)
         builder.set_bool_value('test_mode', False)
-        builder.set_bool_value('bypass_authentication_mode', False)
-        options = builder.get_options()        
+        builder.set_string_value('test_framework', ['disabled'])
+        options = builder.get_options()
 
         server_config = caller_config.get_dict_config('server', True)
         server_builder = user_sync.config.OptionsBuilder(server_config)
@@ -61,12 +61,14 @@ class UmapiConnector(object):
         server_builder.set_string_value('ims_endpoint_jwt', '/ims/exchange/jwt')
         options['server'] = server_options = server_builder.get_options()
 
+        test_framework_test = 'test' == options['test_framework']
+
         # if we are bypassing authentication, don't require the enterprise settings except for the org id. This should
         # only be used for testing.
         enterprise_config = caller_config.get_dict_config('enterprise')
         enterprise_builder = user_sync.config.OptionsBuilder(enterprise_config)
         enterprise_builder.require_string_value('org_id')
-        if caller_options['bypass_authentication_mode']:
+        if test_framework_test:
             enterprise_builder.set_string_value('api_key', None)
             enterprise_builder.set_string_value('client_secret', None)
             enterprise_builder.set_string_value('tech_acct', None)
@@ -76,7 +78,7 @@ class UmapiConnector(object):
         options['enterprise'] = enterprise_options = enterprise_builder.get_options()
 
         self.options = options
-        self.logger = logger = helper.create_logger(options)
+        self.logger = logger = user_sync.connector.helper.create_logger(options)
         if server_config:
             server_config.report_unused_values(logger)
         logger.debug('UMAPI initialized with options: %s', options)
@@ -90,7 +92,7 @@ class UmapiConnector(object):
 
         # if we are bypassing authentication, pass in a dummy authentication object, since we are assuming the end
         # point shouldn't be using it anyways.
-        if caller_options['bypass_authentication_mode']:
+        if test_framework_test:
             auth = umapi_client.auth.Auth('test', 'test')
         else:
             auth_dict = {
